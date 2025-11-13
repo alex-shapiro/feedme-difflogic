@@ -4,4 +4,12 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "mlx>=0.29.4",
+    "numpy>=2.3.4",
+]
+
+[tool.uv.workspace]
+members = [
+    "mlx",
+]
