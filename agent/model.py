@@ -27,6 +27,13 @@ class ActorCritic(nn.Module):
     def policy(self, obs: mx.array) -> Categorical:
         return Categorical(self.p_net(obs))
 
+    def policy_and_logps(
+        self, obs: mx.array, actions: mx.array
+    ) -> tuple[Categorical, mx.array]:
+        policy = Categorical(self.p_net(obs))
+        logps = policy.log_prob(actions)
+        return policy, logps
+
     def value(self, obs: mx.array) -> float:
         # add batch dimension if missing
         obs = obs if obs.ndim > 2 else mx.expand_dims(obs, axis=0)
