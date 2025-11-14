@@ -61,7 +61,7 @@ class LogicClassifier(nn.Module):
         self.group_sum = GroupSum(n_classes)
 
     def __call__(self, x: mx.array) -> mx.array:
-        x = mx.flatten(x)
+        x = x.reshape(x.shape[0], -1)
         for ll in self.logic_layers:
             x = ll(x)
         x = self.group_sum(x)
@@ -88,7 +88,7 @@ class LogicRegresser(nn.Module):
         self.linear = nn.Linear(d_out[-1], 1)
 
     def __call__(self, x: mx.array) -> mx.array:
-        x = mx.flatten(x)
+        x = x.reshape(x.shape[0], -1)
         for ll in self.logic_layers:
             x = ll(x)
         x = self.linear(x)
