@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from typing import Any, final
 
 import mlx.core as mx
-import numpy as np
 from mlx.optimizers import AdamW
 
 from .env import Action, FeedMeEnv
