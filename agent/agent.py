@@ -360,6 +360,7 @@ class FeedMeAgent:
                 ra += reward_a
                 rb += reward_b
                 if i == 0:
+                    print(f"Obs: {obs_a_batch}")
                     print(f"A: {Action(action_a)}, B: {Action(action_b)}")
             ep_rewards_a.append(ra)
             ep_rewards_b.append(rb)

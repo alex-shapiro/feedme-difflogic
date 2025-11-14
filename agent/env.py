@@ -43,8 +43,10 @@ class FeedMeEnv:
 
     def reset(self) -> tuple[mx.array, mx.array]:
         self.t = 0
-        # Observation: [10, 3] = [my_action, opponent_action]
-        self.obs = mx.zeros([10, 2], dtype=mx.float32) - 1.0
+        # Observation: [10, 3] = [my_action, opponent_action, is_episode_start]
+        self.obs = mx.zeros([10, 3], dtype=mx.float32) - 1.0
+
+        self.obs[0, 2] = 1.0
 
         # Get hidden termination step by sampling from geometric distribution
         # E[T] = 1/termination_prob
@@ -55,10 +57,10 @@ class FeedMeEnv:
         return self.observation()
 
     def observation(self) -> tuple[mx.array, mx.array]:
-        # Agent A sees: [my_action, opponent_action]
+        # Agent A sees: [my_action, opponent_action, is_start]
         a = self.obs
-        # Agent B sees swapped actions: [opponent_action, my_action]
-        b = self.obs[:, [1, 0]]
+        # Agent B sees swapped actions: [opponent_action, my_action, is_episode_start]
+        b = mx.concatenate([self.obs[:, [1, 0]], self.obs[:, [2]]], axis=1)
         return a, b
 
     def step(
