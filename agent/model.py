@@ -7,6 +7,31 @@ import agent.functional as F
 
 
 @final
+class LogicModel(nn.Module):
+    def __init__(
+        self,
+        n_layers: int,
+        n_classes: int,
+        d_in: int,
+        d_out: int,
+        grad_factor: float = 1.0,
+        connections: Literal["random", "unique"] = "random",
+    ):
+        super().__init__()
+        self.logic_layers: list[nn.Module] = [
+            LogicLayer(d_in, d_out, grad_factor, connections) for _ in range(n_layers)
+        ]
+        self.group_sum = GroupSum(n_classes)
+
+    def __call__(self, x: mx.array) -> mx.array:
+        x = mx.flatten(x)
+        for layer in self.logic_layers:
+            x = layer(x)
+        x = self.group_sum(x)
+        return x
+
+
+@final
 class LogicLayer(nn.Module):
     def __init__(
         self,
@@ -30,8 +55,8 @@ class LogicLayer(nn.Module):
         assert x.shape[-1] == self.d_in
         a = x[..., self.indices[0]]
         b = x[..., self.indices[1]]
-        # during training, use use probablistic weights for all binary ops
-        # during eval, use the max-probability weight for binary ops
+        # during training, use use probablistic weights for each binary op
+        # during eval, give full weight to the max-probability binary op
         w = (
             nn.softmax(self.weights)
             if self.training
@@ -57,7 +82,7 @@ class LogicLayer(nn.Module):
             b = c[1].astype(mx.int64)
             return a, b
         elif connections == "unique":
-            raise NotImplementedError("unique_connections is not yet implemented")
+            raise NotImplementedError("unique_connections is not implemented")
             # return unique_connections(self.d_in, self.d_out)
 
 

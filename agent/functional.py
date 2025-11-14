@@ -72,6 +72,7 @@ def binary_ops(a: mx.array, b: mx.array, probs: mx.array) -> mx.array:
     return r
 
 
+# TODO: why is this needed? Does it outperform random connections?
 # def unique_connections(d_in: int, d_out: int) -> tuple[mx.array, mx.array]:
 #     assert d_out * 2 >= d_in
 #     x = mx.arange(d_in, dtype=mx.int64)
