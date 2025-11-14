@@ -4,6 +4,7 @@ import mlx.core as mx
 from mlx import nn
 
 import agent.functional as F
+from agent.categorical import Categorical
 
 type Gradients = dict[str, Any]
 
@@ -14,10 +15,28 @@ class ActorCritic(nn.Module):
         self.p_net = LogicClassifier(n_layers=4, n_classes=d_actions)
         self.v_net = LogicRegresser(n_layers=4)
 
+    def step(self, obs: mx.array) -> tuple[int, float, float]:
+        # add batch dimension if missing
+        obs = obs if obs.ndim > 2 else mx.expand_dims(obs, axis=0)
+        policy = self.policy(obs)
+        action = policy.sample()
+        logp = policy.log_prob(action)
+        value = self.v_net(obs)
+        return (int(action.item()), float(logp.item()), float(value.item()))
+
+    def policy(self, obs: mx.array) -> Categorical:
+        return Categorical(self.p_net(obs))
+
+    def value(self, obs: mx.array) -> float:
+        # add batch dimension if missing
+        obs = obs if obs.ndim > 2 else mx.expand_dims(obs, axis=0)
+        return float(self.v_net(obs).item())
 
 
 @final
 class LogicClassifier(nn.Module):
+    """Returns classifier logits for observation input"""
+
     def __init__(
         self,
         n_layers: int,
@@ -35,20 +54,36 @@ class LogicClassifier(nn.Module):
 
     def __call__(self, x: mx.array) -> mx.array:
         x = mx.flatten(x)
-        for layer in self.logic_layers:
-            x = layer(x)
+        for ll in self.logic_layers:
+            x = ll(x)
         x = self.group_sum(x)
         return x
 
+
 @final
 class LogicRegresser(nn.Module):
-    def __init__(self, n_layers: int, d_in: int = 64, d_out: int = 64, grad_factor: float = 1.0, connections: Literal["random", "unique"] = "random"):
+    """Returns a regression value for observation input"""
+
+    def __init__(
+        self,
+        n_layers: int,
+        d_in: int = 64,
+        d_out: int = 64,
+        grad_factor: float = 1.0,
+        connections: Literal["random", "unique"] = "random",
+    ):
         super().__init__()
-        self.logic_layers = [LogicLayer(d_in, d_out, grad_factor, connections) for _ in range(n_layers)]
+        self.logic_layers = [
+            LogicLayer(d_in, d_out, grad_factor, connections) for _ in range(n_layers)
+        ]
         self.linear = nn.Linear(d_out, 1)
 
     def __call__(self, x: mx.array) -> mx.array:
-
+        x = mx.flatten(x)
+        for ll in self.logic_layers:
+            x = ll(x)
+        x = self.linear(x)
+        return x
 
 
 @final
@@ -119,7 +154,7 @@ class GroupSum(nn.Module):
 
     def __call__(self, x: mx.array) -> mx.array:
         """
-        Reshapes
+        Adds x.shape[-1] outputs to
         """
         assert x.shape[-1] % self.k == 0
         d_head = x.shape[:-1]
