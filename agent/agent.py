@@ -1,3 +1,4 @@
+import math
 import os
 import pickle
 from dataclasses import dataclass
@@ -48,9 +49,19 @@ class FeedMeAgent:
         # simulation env
         self.env = FeedMeEnv()
 
+        # logic layer sizes
+        d_obs = math.prod(self.env.obs_space_shape())
+        n_neurons = [d_obs, 64, 32, 16]
+
         # separate models for agent A and agent B
-        self.model_a = ActorCritic(d_actions=self.env.action_space_n())
-        self.model_b = ActorCritic(d_actions=self.env.action_space_n())
+        self.model_a = ActorCritic(
+            d_actions=self.env.action_space_n(),
+            n_neurons=n_neurons,
+        )
+        self.model_b = ActorCritic(
+            d_actions=self.env.action_space_n(),
+            n_neurons=n_neurons,
+        )
 
         # separate optimizers for each agent
         self.policy_optimizer_a = AdamW(learning_rate=policy_lr)
