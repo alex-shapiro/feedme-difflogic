@@ -4,10 +4,11 @@ from dataclasses import dataclass
 from typing import Any, final
 
 import mlx.core as mx
-from env import Action, FeedMeEnv
 from mlx.optimizers import AdamW
-from model import ActorCritic
-from trajectory_buffer import TrajectoryBatch, TrajectoryBuffer
+
+from .env import Action, FeedMeEnv
+from .model import ActorCritic
+from .trajectory_buffer import TrajectoryBatch, TrajectoryBuffer
 
 type Gradients = dict[str, Any]
 
