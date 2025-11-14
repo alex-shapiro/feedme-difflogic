@@ -1,24 +1,34 @@
-from typing import Literal, final, override
+from typing import Any, Literal, final, override
 
 import mlx.core as mx
 from mlx import nn
 
 import agent.functional as F
 
+type Gradients = dict[str, Any]
+
 
 @final
-class LogicModel(nn.Module):
+class ActorCritic(nn.Module):
+    def __init__(self, d_actions: int):
+        self.p_net = LogicClassifier(n_layers=4, n_classes=d_actions)
+        self.v_net = LogicRegresser(n_layers=4)
+
+
+
+@final
+class LogicClassifier(nn.Module):
     def __init__(
         self,
         n_layers: int,
         n_classes: int,
-        d_in: int,
-        d_out: int,
+        d_in: int = 64,
+        d_out: int = 64,
         grad_factor: float = 1.0,
         connections: Literal["random", "unique"] = "random",
     ):
         super().__init__()
-        self.logic_layers: list[nn.Module] = [
+        self.logic_layers = [
             LogicLayer(d_in, d_out, grad_factor, connections) for _ in range(n_layers)
         ]
         self.group_sum = GroupSum(n_classes)
@@ -29,6 +39,16 @@ class LogicModel(nn.Module):
             x = layer(x)
         x = self.group_sum(x)
         return x
+
+@final
+class LogicRegresser(nn.Module):
+    def __init__(self, n_layers: int, d_in: int = 64, d_out: int = 64, grad_factor: float = 1.0, connections: Literal["random", "unique"] = "random"):
+        super().__init__()
+        self.logic_layers = [LogicLayer(d_in, d_out, grad_factor, connections) for _ in range(n_layers)]
+        self.linear = nn.Linear(d_out, 1)
+
+    def __call__(self, x: mx.array) -> mx.array:
+
 
 
 @final
@@ -98,6 +118,9 @@ class GroupSum(nn.Module):
         self.tau = tau
 
     def __call__(self, x: mx.array) -> mx.array:
+        """
+        Reshapes
+        """
         assert x.shape[-1] % self.k == 0
         d_head = x.shape[:-1]
         d_tail = x.shape[-1] // self.k
