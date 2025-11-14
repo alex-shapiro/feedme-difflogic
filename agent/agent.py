@@ -145,6 +145,11 @@ class FeedMeAgent:
                 batch_a, self.model_a
             )
             policy_losses_a.append(policy_loss)
+
+            # Check gradient flow on first iteration
+            if i == 0:
+                self._check_gradients(grads, "A policy")
+
             self.policy_optimizer_a.update(self.model_a.p_net, grads)
             mx.eval(self.model_a.p_net.parameters())
             if policy_info.approximate_kl > 1.5 * self.target_kl:
@@ -155,6 +160,11 @@ class FeedMeAgent:
 
         for i in range(self.n_value_training_iters):
             value_loss, grads = self.compute_value_loss_and_grads(batch_a, self.model_a)
+
+            # Check gradient flow on first iteration
+            if i == 0:
+                self._check_gradients(grads, "A value")
+
             self.value_optimizer_a.update(self.model_a.v_net, grads)
             mx.eval(self.model_a.v_net.parameters())
             value_losses_a.append(value_loss)
@@ -201,8 +211,54 @@ class FeedMeAgent:
         )
         print(f"A policy entropy: {self.model_a.p_net.mean_entropy():.3f}")
         print(f"A value entropy: {self.model_a.v_net.mean_entropy():.3f}")
-        self.model_a.p_net.mean_entropy()
-        self.model_a.v_net.mean_entropy()
+        print(f"B policy entropy: {self.model_b.p_net.mean_entropy():.3f}")
+        print(f"B value entropy: {self.model_b.v_net.mean_entropy():.3f}")
+
+    def _check_gradients(self, grads: Gradients, name: str):
+        """Check gradient statistics to ensure gradients are flowing properly"""
+        grad_values = []
+        zero_grads = 0
+        total_params = 0
+
+        def process_grad(g):
+            """Recursively process gradient structures"""
+            if isinstance(g, dict):
+                for v in g.values():
+                    process_grad(v)
+            elif isinstance(g, list):
+                for item in g:
+                    process_grad(item)
+            elif isinstance(g, mx.array):
+                grad_flat = mx.flatten(g)
+                grad_values.append(grad_flat)
+                nonlocal zero_grads, total_params
+                zero_grads += int((mx.abs(grad_flat) < 1e-10).sum())
+                total_params += grad_flat.size
+
+        process_grad(grads)
+
+        if grad_values:
+            all_grads = mx.concatenate(grad_values)
+            grad_mean = float(mx.mean(mx.abs(all_grads)))
+            grad_max = float(mx.max(mx.abs(all_grads)))
+            grad_min = float(mx.min(mx.abs(all_grads)))
+
+            print(f"{name} gradient stats:")
+            print(
+                f"  Mean abs: {grad_mean:.6f}, Max abs: {grad_max:.6f}, Min abs: {grad_min:.6f}"
+            )
+            print(
+                f"  Zero grads: {zero_grads}/{total_params} ({100 * zero_grads / total_params:.1f}%)"
+            )
+
+            if grad_mean < 1e-8:
+                print(
+                    f"  WARNING: {name} gradients are very small - may indicate vanishing gradients!"
+                )
+            if zero_grads > 0.9 * total_params:
+                print(
+                    f"  WARNING: {name} has >90% zero gradients - gradient flow may be blocked!"
+                )
 
     def compute_policy_loss_and_grads(
         self, batch: TrajectoryBatch, model: ActorCritic
