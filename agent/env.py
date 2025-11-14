@@ -83,6 +83,6 @@ class FeedMeEnv:
         a = Action(opponent_action)
         match a:
             case Action.FeedOther:
-                return 10
+                return 1
             case Action.OpenMouth:
                 return 0
