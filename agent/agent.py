@@ -25,12 +25,12 @@ class FeedMeAgent:
         gamma: float = 0.99,
         lamda: float = 0.95,
         clip_ratio: float = 0.4,
-        policy_lr: float = 0.1,
+        policy_lr: float = 0.03,
         value_lr: float = 0.03,
         target_kl: float = 0.5,
         entropy_coef: float = 0.0,
         initial_entropy_coef: float = 0.0,
-        entropy_coef_decay: float = 0.999,
+        entropy_coef_decay: float = 0.995,
     ):
         super().__init__()
 
@@ -335,8 +335,8 @@ class FeedMeAgent:
     def evaluate(self, n_episodes: int):
         ep_rewards_a = []
         ep_rewards_b = []
-        actions_a = [0, 0, 0]
-        actions_b = [0, 0, 0]
+        actions_a = [0, 0]
+        actions_b = [0, 0]
         for i in range(n_episodes):
             ra = 0.0
             rb = 0.0
