@@ -64,12 +64,18 @@ def binary_ops(a: mx.array, b: mx.array, inputs) -> mx.array:
     return r
 
 
-# def unique_connections(d_in: int, d_out: int, device: mx.Device):
-#     assert d_out * 2 >= d_in
-#     x = mx.arange(d_in, dtype=mx.int64)
-#     a = x[..., ::2]  # elements @ even indices
-#     b = x[..., 1::2]  # elements @ odd indices
-#     if a.shape[-1] != b.shape[-1]:
-#         m = min(a.shape[-1], b.shape[-1])
-#         a = a[..., :m]
-#         b = b[..., :m]
+def unique_connections(d_in: int, d_out: int) -> tuple[mx.array, mx.array]:
+    assert d_out * 2 >= d_in
+    x = mx.arange(d_in, dtype=mx.int64)
+    a = x[..., ::2]  # elements @ even indices
+    b = x[..., 1::2]  # elements @ odd indices
+    if a.shape[-1] != b.shape[-1]:
+        m = min(a.shape[-1], b.shape[-1])
+        a = a[..., :m]
+        b = b[..., :m]
+
+
+def one_hot(indices: mx.array, num_classes: int) -> mx.array:
+    """Returns one-hot encoded vectors"""
+    r: mx.array = mx.arange(num_classes) == mx.expand_dims(indices, axis=-1)  # pyright: ignore[reportReturnType, reportAssignmentType]
+    return r.astype(mx.float32)
