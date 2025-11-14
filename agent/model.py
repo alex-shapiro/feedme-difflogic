@@ -67,6 +67,15 @@ class LogicClassifier(nn.Module):
         x = self.group_sum(x)
         return x
 
+    def mean_entropy(self) -> float:
+        """Calculates the mean entropy of logic weights in the model"""
+        entropy = 0.0
+        weights = 0
+        for ll in self.logic_layers:
+            entropy += ll.entropy()
+            weights += ll.n_weights
+        return entropy / weights
+
 
 @final
 class LogicRegresser(nn.Module):
@@ -93,6 +102,15 @@ class LogicRegresser(nn.Module):
             x = ll(x)
         x = self.linear(x)
         return x
+
+    def mean_entropy(self) -> float:
+        """Calculates the mean entropy of logic weights in the model"""
+        entropy = 0.0
+        weights = 0
+        for ll in self.logic_layers:
+            entropy += ll.entropy()
+            weights += ll.n_weights
+        return entropy / weights
 
 
 @final
@@ -152,6 +170,9 @@ class LogicLayer(nn.Module):
     @override
     def __repr__(self) -> str:
         return f"LogicLayer(d_in={self.d_in}, d_out={self.d_out}, grad_factor={self.grad_factor})"
+
+    def entropy(self) -> float:
+        return F.entropy(self.weights)
 
 
 @final

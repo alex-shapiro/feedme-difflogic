@@ -94,3 +94,10 @@ def one_hot(indices: mx.array, num_classes: int) -> mx.array:
     """Returns one-hot encoded vectors"""
     r: mx.array = mx.arange(num_classes) == mx.expand_dims(indices, axis=-1)  # pyright: ignore[reportReturnType, reportAssignmentType]
     return r.astype(mx.float32)
+
+
+def entropy(logits: mx.array, axis: int = -1) -> float:
+    """Compute the entropy of a logit array"""
+    probs = mx.softmax(logits, axis=axis)
+    safe_probs = mx.clip(probs, 1e-10, 1.0)
+    return float(-(probs * mx.log(safe_probs)).sum())

@@ -199,6 +199,10 @@ class FeedMeAgent:
         print(
             f"B Value loss: {mx.mean(value_losses_b):.3f} +/- {mx.std(value_losses_b):.3f}"
         )
+        print(f"A policy entropy: {self.model_a.p_net.mean_entropy():.3f}")
+        print(f"A value entropy: {self.model_a.v_net.mean_entropy():.3f}")
+        self.model_a.p_net.mean_entropy()
+        self.model_a.v_net.mean_entropy()
 
     def compute_policy_loss_and_grads(
         self, batch: TrajectoryBatch, model: ActorCritic
