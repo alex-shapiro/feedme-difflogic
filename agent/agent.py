@@ -63,8 +63,6 @@ class FeedMeAgent:
             n_neurons=n_neurons,
         )
 
-        print(self.model_a)
-
         # separate optimizers for each agent
         self.policy_optimizer_a = AdamW(learning_rate=policy_lr)
         self.value_optimizer_a = AdamW(learning_rate=value_lr)
