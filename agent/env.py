@@ -20,6 +20,11 @@ class Action(Enum):
 
 @final
 class FeedMeEnv:
+    """
+    Observation is each player's action over the previous 10 turns.
+    The most recent turn is index 0, the 10th most recent is index 9.
+    """
+
     def __init__(self, max_steps: int = 35, termination_prob: float = 0.04):
         """
         Args:
@@ -38,11 +43,8 @@ class FeedMeEnv:
 
     def reset(self) -> tuple[mx.array, mx.array]:
         self.t = 0
-        # Observation: [max_steps, 3] = [my_action, opponent_action, is_episode_start]
-        self.obs = mx.zeros([self.max_steps, 3], dtype=mx.float32) - 1.0
-
-        # Mark first timestep as episode start
-        self.obs[0, 2] = 1.0
+        # Observation: [10, 3] = [my_action, opponent_action]
+        self.obs = mx.zeros([10, 2], dtype=mx.float32) - 1.0
 
         # Get hidden termination step by sampling from geometric distribution
         # E[T] = 1/termination_prob
@@ -53,10 +55,10 @@ class FeedMeEnv:
         return self.observation()
 
     def observation(self) -> tuple[mx.array, mx.array]:
-        # Agent A sees: [my_action, opponent_action, is_episode_start]
+        # Agent A sees: [my_action, opponent_action]
         a = self.obs
-        # Agent B sees swapped actions: [opponent_action, my_action, is_episode_start]
-        b = mx.concatenate([self.obs[:, [1, 0]], self.obs[:, [2]]], axis=1)
+        # Agent B sees swapped actions: [opponent_action, my_action]
+        b = self.obs[:, [1, 0]]
         return a, b
 
     def step(
@@ -64,9 +66,10 @@ class FeedMeEnv:
         action_a: int,
         action_b: int,
     ) -> tuple[tuple[mx.array, mx.array], tuple[int, int], bool]:
-        assert self.t < self.max_steps
-        self.obs[self.t, 0] = float(action_a)
-        self.obs[self.t, 1] = float(action_b)
+        assert self.t < self.hidden_termination_step
+        self.obs = mx.roll(self.obs, shift=1)  # pyright: ignore[reportCallIssue]
+        self.obs[0, 0] = float(action_a)
+        self.obs[0, 1] = float(action_b)
 
         reward_a = self.get_reward(action_b)
         reward_b = self.get_reward(action_a)
