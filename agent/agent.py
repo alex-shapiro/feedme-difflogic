@@ -51,7 +51,7 @@ class FeedMeAgent:
 
         # logic layer sizes
         d_obs = math.prod(self.env.obs_space_shape())
-        n_neurons = [d_obs, 64, 32, 16]
+        n_neurons = [d_obs, 32, 16, 8]
 
         # separate models for agent A and agent B
         self.model_a = ActorCritic(
