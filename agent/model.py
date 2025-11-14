@@ -3,7 +3,7 @@ from typing import Literal, final, override
 import mlx.core as mx
 from mlx import nn
 
-from agent.functional import unique_connections
+import agent.functional as F
 
 
 @final
@@ -23,22 +23,30 @@ class LogicLayer(nn.Module):
         self.connections = connections
         self.n_neurons = d_out
         self.n_weights = d_out
-        self.indices = self.get_connections(self.connections)
+        self.indices = self.get_connections(connections)
 
     @override
     def __call__(self, x: mx.array) -> mx.array:
         assert x.shape[-1] == self.d_in
         a = x[..., self.indices[0]]
         b = x[..., self.indices[1]]
+        # during training, use use probablistic weights for all binary ops
+        # during eval, use the max-probability weight for binary ops
+        w = (
+            nn.softmax(self.weights)
+            if self.training
+            else F.one_hot(self.weights.argmax(-1), 16)
+        )
+        return F.binary_ops(a, b, w)
 
-        if self.training:
-            w = mx.one_hot(self.weights.argmax(-1), 16)
-        # if self.indices
-
-    # TODO: return type
     def get_connections(
         self, connections: Literal["random", "unique"]
     ) -> tuple[mx.array, mx.array]:
+        """
+        Maps input => output dimensions.
+        Each returned array is an input A or B.
+        Each element A[i] or B[i] is an input index that maps to Output[i].
+        """
         assert self.d_out * 2 >= self.d_in
         if connections == "random":
             # take random input indices to random output indices
@@ -49,7 +57,8 @@ class LogicLayer(nn.Module):
             b = c[1].astype(mx.int64)
             return a, b
         elif connections == "unique":
-            return unique_connections(self.d_in, self.d_out)
+            raise NotImplementedError("unique_connections is not yet implemented")
+            # return unique_connections(self.d_in, self.d_out)
 
 
 @final

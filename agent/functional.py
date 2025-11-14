@@ -57,22 +57,36 @@ def binary_op(a: mx.array, b: mx.array, i: int) -> mx.array:  # pyright: ignore[
             return mx.ones_like(a)
 
 
-def binary_ops(a: mx.array, b: mx.array, inputs) -> mx.array:
+def binary_ops(a: mx.array, b: mx.array, probs: mx.array) -> mx.array:
+    """
+    Runs each binary operation over inputs A and B,
+    then multiplies the result by the weight of that operation's probability.
+
+    a: input a
+    b: input b
+    probs: the probability of each binary operation
+    """
     r = mx.zeros_like(a)
     for i in range(16):
-        r += inputs[..., i] * binary_op(a, b, i)
+        r += probs[..., i] * binary_op(a, b, i)
     return r
 
 
-def unique_connections(d_in: int, d_out: int) -> tuple[mx.array, mx.array]:
-    assert d_out * 2 >= d_in
-    x = mx.arange(d_in, dtype=mx.int64)
-    a = x[..., ::2]  # elements @ even indices
-    b = x[..., 1::2]  # elements @ odd indices
-    if a.shape[-1] != b.shape[-1]:
-        m = min(a.shape[-1], b.shape[-1])
-        a = a[..., :m]
-        b = b[..., :m]
+# def unique_connections(d_in: int, d_out: int) -> tuple[mx.array, mx.array]:
+#     assert d_out * 2 >= d_in
+#     x = mx.arange(d_in, dtype=mx.int64)
+#     x = mx.expand_dims(x, 0)
+#     # take pairs
+#     a = x[..., ::2]  # elements @ even indices
+#     b = x[..., 1::2]  # elements @ odd indices
+
+#     # If d_in is odd, A and B will have different sizes and you must remove the last element of A.
+#     if a.shape[-1] != b.shape[-1]:
+#         m = min(a.shape[-1], b.shape[-1])
+#         a = a[..., :m]
+#         b = b[..., :m]
+#     # If removing the last element made A smaller than d_out
+#     if a.shape[-1] < d_out:
 
 
 def one_hot(indices: mx.array, num_classes: int) -> mx.array:
