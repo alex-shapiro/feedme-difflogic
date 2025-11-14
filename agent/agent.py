@@ -24,9 +24,9 @@ class FeedMeAgent:
         n_value_training_iters: int = 8,
         gamma: float = 0.99,
         lamda: float = 0.95,
-        clip_ratio: float = 0.2,
+        clip_ratio: float = 0.4,
         policy_lr: float = 1e-2,
-        value_lr: float = 1e-3,
+        value_lr: float = 5e-3,
         target_kl: float = 0.5,
         entropy_coef: float = 0.0,
         initial_entropy_coef: float = 0.0,
@@ -264,6 +264,16 @@ class FeedMeAgent:
             print(
                 f"  Zero grads: {zero_grads}/{total_params} ({100 * zero_grads / total_params:.1f}%)"
             )
+
+            # Per-layer gradient stats for logic layers
+            if "logic_layers" in grads:
+                per_layer = []
+                for i, layer_grads in enumerate(grads["logic_layers"]):
+                    if "weights" in layer_grads:
+                        w_grad = layer_grads["weights"]
+                        per_layer.append(f"{float(mx.mean(mx.abs(w_grad))):.2e}")
+                if per_layer:
+                    print(f"  Per-layer grad means: {per_layer}")
 
             if grad_mean < 1e-8:
                 print(
