@@ -25,11 +25,11 @@ class FeedMeAgent:
         gamma: float = 0.99,
         lamda: float = 0.95,
         clip_ratio: float = 0.2,
-        policy_lr: float = 1e-3,
+        policy_lr: float = 1e-2,
         value_lr: float = 1e-3,
         target_kl: float = 0.5,
-        entropy_coef: float = 0.05,
-        initial_entropy_coef: float = 0.1,
+        entropy_coef: float = 0.0,
+        initial_entropy_coef: float = 0.0,
         entropy_coef_decay: float = 0.999,
     ):
         super().__init__()
@@ -146,12 +146,26 @@ class FeedMeAgent:
             )
             policy_losses_a.append(policy_loss)
 
-            # Check gradient flow on first iteration
+            # Check gradient flow and weight updates on first iteration
             if i == 0:
                 self._check_gradients(grads, "A policy")
+                # Store weights before update
+                old_weights = [
+                    mx.array(ll.weights) for ll in self.model_a.p_net.logic_layers
+                ]
 
             self.policy_optimizer_a.update(self.model_a.p_net, grads)
             mx.eval(self.model_a.p_net.parameters())
+
+            # Check weight updates on first iteration
+            if i == 0:
+                weight_deltas = []
+                for j, ll in enumerate(self.model_a.p_net.logic_layers):
+                    delta = mx.abs(ll.weights - old_weights[j])
+                    weight_deltas.append(float(delta.mean()))
+                print(
+                    f"  Weight deltas per layer: {[f'{d:.2e}' for d in weight_deltas]}"
+                )
             if policy_info.approximate_kl > 1.5 * self.target_kl:
                 print(
                     f"A: stopping early at iter {i} for reaching max KL (value ~{policy_info.approximate_kl:.4f})"
