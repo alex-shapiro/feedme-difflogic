@@ -13,3 +13,8 @@ dependencies = [
 members = [
     "mlx",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.5",
+]
