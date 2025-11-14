@@ -149,6 +149,10 @@ class LogicLayer(nn.Module):
             raise NotImplementedError("unique_connections is not implemented")
             # return unique_connections(self.d_in, self.d_out)
 
+    @override
+    def __repr__(self) -> str:
+        return f"LogicLayer(d_in={self.d_in}, d_out={self.d_out}, grad_factor={self.grad_factor})"
+
 
 @final
 class GroupSum(nn.Module):
