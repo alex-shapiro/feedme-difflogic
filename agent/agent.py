@@ -25,12 +25,12 @@ class FeedMeAgent:
         gamma: float = 0.99,
         lamda: float = 0.95,
         clip_ratio: float = 0.4,
-        policy_lr: float = 0.06,
-        value_lr: float = 0.06,
+        policy_lr: float = 0.03,
+        value_lr: float = 0.03,
         target_kl: float = 0.5,
-        entropy_coef: float = 0.001,
-        initial_entropy_coef: float = 0.001,
-        entropy_coef_decay: float = 0.999,
+        entropy_coef: float = 0.0,
+        initial_entropy_coef: float = 0.0,
+        entropy_coef_decay: float = 0.995,
     ):
         super().__init__()
 
@@ -51,7 +51,7 @@ class FeedMeAgent:
 
         # logic layer sizes
         d_obs = math.prod(self.env.obs_space_shape())
-        n_neurons = [d_obs, 32, 16, 8]
+        n_neurons = [d_obs, 64, 32, 16]
 
         # separate models for agent A and agent B
         self.model_a = ActorCritic(
