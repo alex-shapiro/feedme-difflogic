@@ -11,9 +11,9 @@ type Gradients = dict[str, Any]
 
 @final
 class ActorCritic(nn.Module):
-    def __init__(self, d_actions: int):
-        self.p_net = LogicClassifier(n_layers=4, n_classes=d_actions)
-        self.v_net = LogicRegresser(n_layers=4)
+    def __init__(self, d_actions: int, n_neurons: list[int]):
+        self.p_net = LogicClassifier(n_classes=d_actions, n_neurons=n_neurons)
+        self.v_net = LogicRegresser(n_neurons=n_neurons)
 
     def step(self, obs: mx.array) -> tuple[int, float, float]:
         # add batch dimension if missing
@@ -46,16 +46,17 @@ class LogicClassifier(nn.Module):
 
     def __init__(
         self,
-        n_layers: int,
         n_classes: int,
-        d_in: int = 64,
-        d_out: int = 64,
+        n_neurons: list[int],
         grad_factor: float = 1.0,
         connections: Literal["random", "unique"] = "random",
     ):
         super().__init__()
+        d_in = n_neurons[: len(n_neurons)]
+        d_out = n_neurons[1:]
+        dims = zip(d_in, d_out)
         self.logic_layers = [
-            LogicLayer(d_in, d_out, grad_factor, connections) for _ in range(n_layers)
+            LogicLayer(i, o, grad_factor, connections) for (i, o) in dims
         ]
         self.group_sum = GroupSum(n_classes)
 
@@ -73,17 +74,18 @@ class LogicRegresser(nn.Module):
 
     def __init__(
         self,
-        n_layers: int,
-        d_in: int = 64,
-        d_out: int = 64,
+        n_neurons: list[int],
         grad_factor: float = 1.0,
         connections: Literal["random", "unique"] = "random",
     ):
         super().__init__()
+        d_in = n_neurons[: len(n_neurons)]
+        d_out = n_neurons[1:]
+        dims = zip(d_in, d_out)
         self.logic_layers = [
-            LogicLayer(d_in, d_out, grad_factor, connections) for _ in range(n_layers)
+            LogicLayer(i, o, grad_factor, connections) for (i, o) in dims
         ]
-        self.linear = nn.Linear(d_out, 1)
+        self.linear = nn.Linear(d_out[-1], 1)
 
     def __call__(self, x: mx.array) -> mx.array:
         x = mx.flatten(x)
